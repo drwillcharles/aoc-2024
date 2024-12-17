@@ -5,7 +5,7 @@ I find it hard to pick up new coding languages without an end goal, so I challen
 ### Create a new package
 
 I decided to create a package for each day. May need to change this to each part of each day:
-`cargo new aoc-2024`
+`cargo new day1`
 
 ### Run the code
 
