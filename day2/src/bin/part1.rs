@@ -40,12 +40,10 @@ fn main() {
                         safe = false;
                     }
                 } else {
-                    
                     if level_before - level_after < 1  || level_before - level_after > 3 {
                         safe = false;
                     }
                 }
-                
             }
             
             if safe {
