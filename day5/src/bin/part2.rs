@@ -33,13 +33,13 @@ fn create_updates(binding: &String) -> Vec<Vec<i32>> {
     return updates;
 }
 
-fn check_order(
-    after_before: &MultiMap<i32, i32>,
-    update: &Vec<i32>,
-    i: &usize,
-    val: &i32,
+fn check_order<'a>(
+    after_before: &'a MultiMap<i32, i32>,
+    updated: &'a mut Vec<i32>,
+    i: usize,
+    val: &'a i32,
 ) -> (bool, Vec<i32>) {
-    let mut updated = update.clone();
+    
     let mut valid: bool = true;
 
     let check = after_before.get_vec(val);
@@ -49,15 +49,15 @@ fn check_order(
             // println!("The number is: {}", number);
             // Perform your action with the number here
             for before in number {
-                if updated[*i..].contains(before) {
+                if updated[i..].contains(before) {
                     //Change to while loop
                     println!("Invalid {:?} in {:?}", number, updated);
                     // Fix value
                     updated.retain(|&x| x != *before);
-                    updated.insert(*i, *before);
+                    updated.insert(i, *before);
 
                     valid = false;
-                } 
+                }
             }
         }
         None => {
@@ -65,8 +65,7 @@ fn check_order(
             // return true
         }
     }
-    return (valid, updated);
-
+    return (valid, updated.to_vec());
 }
 fn check_updates(after_before: &MultiMap<i32, i32>, updates: &mut Vec<Vec<i32>>) -> i32 {
     // Now we check the rules
@@ -75,28 +74,26 @@ fn check_updates(after_before: &MultiMap<i32, i32>, updates: &mut Vec<Vec<i32>>)
 
     for update in updates.iter() {
         let mut valid: bool;
-        let mut updated;
+        let mut updated: Vec<i32> = *update.copy();
 
         // while !valid {
-            
+
         // }
+        let mut correct: bool = false;
+        while !correct {
+            for (i, val) in update.iter().enumerate() {
+                // Check if page has appeared
+                (valid, updated) = check_order(&after_before, &mut updated, i, &val);
 
-        for (i, val) in update.iter().enumerate() {
-            // Check if page has appeared
-            (valid, updated) = check_order(&after_before, &update, &i, &val);
+                // If this is not valid, start from the beginning
+                if !valid {
+                    correct = false;
+                    invalid_updates.push(updated);
+                }
 
-            // Don't think we need this for part 2
-            if !valid {
-                invalid_updates.push(updated);
+                // Don't think we need this for part 2
             }
-
-            // if i == update.len() - 1 && !valid {
-            //     let middle = updated[update.len() / 2];
-            //     println!("Middle number is {:?}", middle);
-            //     total += middle;
-            // }
         }
-        // println!("{:?}",update);
     }
 
     for update in invalid_updates.iter() {
