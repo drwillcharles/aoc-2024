@@ -33,14 +33,15 @@ fn create_updates(binding: &String) -> Vec<Vec<i32>> {
     return updates;
 }
 
-fn check_order<'a>(
+fn check_order(
     after_before: &MultiMap<i32, i32>,
-    updated: &'a mut Vec<i32>,
+    update: &Vec<i32>,
     i: &usize,
     val: &i32,
-) -> (bool, &'a mut Vec<i32>) {
-    // let mut updated = update.clone();
+) -> (bool, Vec<i32>) {
+    let mut updated = update.clone();
     let mut valid: bool = true;
+
     let check = after_before.get_vec(val);
     // Using pattern matching (recommended)
     match check {
@@ -48,15 +49,15 @@ fn check_order<'a>(
             // println!("The number is: {}", number);
             // Perform your action with the number here
             for before in number {
-                while updated[*i..].contains(before) {
+                if updated[*i..].contains(before) {
                     //Change to while loop
                     println!("Invalid {:?} in {:?}", number, updated);
                     // Fix value
-                    updated.retain(|&x| x != *val);
-                    updated.insert(i - 1, *before);
+                    updated.retain(|&x| x != *before);
+                    updated.insert(0, *before);
 
                     valid = false;
-                }
+                } 
             }
         }
         None => {
@@ -74,23 +75,34 @@ fn check_updates(after_before: &MultiMap<i32, i32>, updates: &mut Vec<Vec<i32>>)
 
     for update in updates.iter() {
         let mut valid: bool;
-        let mut updated = Vec::new();
+        let mut updated;
+
+        // while !valid {
+            
+        // }
+
         for (i, val) in update.iter().enumerate() {
             // Check if page has appeared
-            (valid, updated) = check_order(&after_before, &mut update.clone(), &i, &val);
+            (valid, updated) = check_order(&after_before, &update, &i, &val);
 
             // Don't think we need this for part 2
             if !valid {
                 invalid_updates.push(updated);
             }
 
-            if i == update.len() - 1 && !valid {
-                let middle = updated[update.len() / 2];
-                println!("Middle number is {:?}", middle);
-                total += middle;
-            }
+            // if i == update.len() - 1 && !valid {
+            //     let middle = updated[update.len() / 2];
+            //     println!("Middle number is {:?}", middle);
+            //     total += middle;
+            // }
         }
         // println!("{:?}",update);
+    }
+
+    for update in invalid_updates.iter() {
+        let middle = update[update.len() / 2];
+        println!("{:?} Middle number is {:?}", update, middle);
+        total += middle;
     }
     return total;
 }
