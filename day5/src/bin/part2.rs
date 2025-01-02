@@ -54,7 +54,7 @@ fn check_order(
                     println!("Invalid {:?} in {:?}", number, updated);
                     // Fix value
                     updated.retain(|&x| x != *before);
-                    updated.insert(0, *before);
+                    updated.insert(*i, *before);
 
                     valid = false;
                 } 
