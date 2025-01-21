@@ -43,15 +43,30 @@ impl Grid {
         return find_character(&self.tiles);
     }
 
-    fn next_position(&mut self) -> (usize, usize) {
+    fn next_position(&mut self) -> Option<(usize, usize)> {
         let (row, col) = self.guard_location;
-        match self.guard_direction {
-            Direction::Up => return (row - 1, col),
-            Direction::Right => return (row, col + 1),
-            Direction::Down => return (row + 1, col),
-            Direction::Left => return (row, col - 1),
+        // Convert to isize for safe arithmetic
+        let (row, col) = (row as isize, col as isize);
+
+        let next_position = match self.guard_direction {
+            Direction::Up => (row - 1, col),
+            Direction::Right => (row, col + 1),
+            Direction::Down => (row + 1, col),
+            Direction::Left => (row, col - 1),
+        };
+
+        // Check if the next position is within bounds
+        let (next_row, next_col) = next_position;
+        if next_row >= 0
+            && next_row < self.height as isize
+            && next_col >= 0
+            && next_col < self.width as isize
+        {
+            // Convert back to usize and return
+            Some((next_row as usize, next_col as usize))
+        } else {
+            None // Return None if out of bounds
         }
-        //self.guard_location = (row-1, col),
     }
 
     fn rotate_guard(&mut self) {
@@ -68,36 +83,43 @@ impl Grid {
         // TODO
 
         let (current_row, current_col) = self.guard_location;
-        let (next_row, next_col) = self.next_position();
+        if let Some((next_row, next_col)) = self.next_position() {
+            // If the guard falls off the grid, it will be here
+            // let next_tile = self.tiles[next_row][next_col];
+            if let Some(value) = self
+                .tiles
+                .get(next_row)
+                .and_then(|row| row.get(next_col))
+                .copied()
+            {
+                let next_tile = value;
 
-        // If the guard falls off the grid, it will be here
-        // let next_tile = self.tiles[next_row][next_col];
-        if let Some(value) = self
-            .tiles
-            .get(next_row)
-            .and_then(|row| row.get(next_col))
-            .copied()
-        {
-            let next_tile = value;
+                // Move forward
+                if next_tile == '.' || next_tile == 'X' {
+                    self.guard_location = (next_row, next_col);
+                    self.tiles[current_row][current_col] = 'X';
+                    self.tiles[next_row][next_col] = '^';
+                }
 
-            // Move forward
-            if next_tile == '.' || next_tile == 'X' {
-                self.guard_location = self.next_position();
+                // Rotate
+                if next_tile == '#' {
+                    self.rotate_guard();
+                }
+                return true;
+            } else {
+                // Replace guard with X
                 self.tiles[current_row][current_col] = 'X';
-                self.tiles[next_row][next_col] = '^';
-            }
 
-            // Rotate
-            if next_tile == '#' {
-                self.rotate_guard();
+                return false;
             }
-            return true;
         } else {
             // Replace guard with X
             self.tiles[current_row][current_col] = 'X';
 
             return false;
         }
+
+        
     }
 
     fn count_x(&self) -> usize {
@@ -119,7 +141,7 @@ impl Grid {
 }
 
 fn main() {
-    let binding = fs::read_to_string("src/test.txt").unwrap();
+    let binding = fs::read_to_string("src/input.txt").unwrap();
 
     let mut grid = Grid::new(&binding);
 
