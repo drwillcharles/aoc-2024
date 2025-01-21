@@ -1,9 +1,26 @@
 use std::fs;
 
+fn find_character(tiles: &Vec<Vec<char>>) -> Option<(usize, usize)> {
+    tiles.iter().enumerate().find_map(|(row_idx, row)| {
+        row.iter()
+            .position(|&ch| matches!(ch, '<' | '>' | '^' | '↓'))
+            .map(|col_idx| (row_idx, col_idx))
+    })
+}
+
 struct Grid {
     tiles: Vec<Vec<char>>,
     width: usize,
     height: usize,
+    guard_location: (usize, usize),
+    guard_direction: Direction, // '<' | '>' | '^' | '↓'
+}
+
+enum Direction {
+    Up,
+    Right,
+    Down,
+    Left,
 }
 
 impl Grid {
@@ -11,29 +28,114 @@ impl Grid {
         let tiles: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
         let height = tiles.len();
         let width = tiles[0].len();
-
+        let guard_location = find_character(&tiles).unwrap_or((0, 0));
+        let guard_direction = Direction::Up;
         Self {
             tiles,
             width,
             height,
+            guard_location: guard_location, // Handle None if necessary,
+            guard_direction: guard_direction,
         }
+    }
+
+    fn find_character(&self) -> Option<(usize, usize)> {
+        return find_character(&self.tiles);
+    }
+
+    fn next_position(&mut self) -> (usize, usize) {
+        let (row, col) = self.guard_location;
+        match self.guard_direction {
+            Direction::Up => return (row - 1, col),
+            Direction::Right => return (row, col + 1),
+            Direction::Down => return (row + 1, col),
+            Direction::Left => return (row, col - 1),
+        }
+        //self.guard_location = (row-1, col),
+    }
+
+    fn rotate_guard(&mut self) {
+        match self.guard_direction {
+            Direction::Up => self.guard_direction = Direction::Right,
+            Direction::Right => self.guard_direction = Direction::Down,
+            Direction::Down => self.guard_direction = Direction::Left,
+            Direction::Left => self.guard_direction = Direction::Up,
+        }
+    }
+
+    fn step(&mut self) -> bool {
+        // First check if the guard has fallen off the grid
+        // TODO
+
+        let (current_row, current_col) = self.guard_location;
+        let (next_row, next_col) = self.next_position();
+
+        // If the guard falls off the grid, it will be here
+        // let next_tile = self.tiles[next_row][next_col];
+        if let Some(value) = self
+            .tiles
+            .get(next_row)
+            .and_then(|row| row.get(next_col))
+            .copied()
+        {
+            let next_tile = value;
+
+            // Move forward
+            if next_tile == '.' || next_tile == 'X' {
+                self.guard_location = self.next_position();
+                self.tiles[current_row][current_col] = 'X';
+                self.tiles[next_row][next_col] = '^';
+            }
+
+            // Rotate
+            if next_tile == '#' {
+                self.rotate_guard();
+            }
+            return true;
+        } else {
+            // Replace guard with X
+            self.tiles[current_row][current_col] = 'X';
+
+            return false;
+        }
+    }
+
+    fn count_x(&self) -> usize {
+        self.tiles.iter()
+            .flat_map(|row| row.iter()) // Flatten the 2D grid into a single iterator
+            .filter(|&&ch| ch == 'X')   // Filter only the 'X' characters
+            .count()                    // Count the filtered items
     }
 
     fn print(&self) {
         for row in 0..self.width {
             for col in 0..self.height {
-                print!("{}",self.tiles[row][col])
+                print!("{}", self.tiles[row][col])
             }
             print!("\n")
         }
+        print!("\n")
     }
 }
 
 fn main() {
     let binding = fs::read_to_string("src/test.txt").unwrap();
 
-    let grid = Grid::new(&binding);
+    let mut grid = Grid::new(&binding);
 
     grid.print();
-}
 
+    // if let Some((row, col)) = grid.find_character() {
+    //     println!("Found '^' at ({}, {})", row, col);
+    // } else {
+    //     println!("'^' not found in the grid");
+    // }
+
+    while grid.step() {
+        // Debug
+        // grid.print();
+    }
+    grid.print();
+
+    println!("{:?}", grid.count_x())
+}
